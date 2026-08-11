@@ -2,12 +2,11 @@
 // Version: 1.0.0
 // Estrategia: cache-first para funcionar sin conexión
 
-const CACHE_NAME = 'foco-v2';
+const CACHE_NAME = 'foco-v3';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
   './icon-512.png'
 ];
 
