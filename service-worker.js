@@ -1,15 +1,13 @@
 // Foco - Service Worker
-// Version: 1.0.0
+// Version: 1.1.0
 // Estrategia: cache-first para funcionar sin conexión
-
-const CACHE_NAME = 'foco-v9';
+const CACHE_NAME = 'foco-v10';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './icon-512.png'
 ];
-
 // Al instalar: precachea los archivos esenciales
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -18,7 +16,6 @@ self.addEventListener('install', event => {
       .then(() => self.skipWaiting())
   );
 });
-
 // Al activar: limpia versiones viejas del cache
 self.addEventListener('activate', event => {
   event.waitUntil(
@@ -29,7 +26,6 @@ self.addEventListener('activate', event => {
     ).then(() => self.clients.claim())
   );
 });
-
 // Al hacer fetch: intenta cache primero, luego red
 self.addEventListener('fetch', event => {
   if(event.request.method !== 'GET') return;
@@ -52,7 +48,6 @@ self.addEventListener('fetch', event => {
     })
   );
 });
-
 // Escuchar mensajes de la app (para notificaciones locales futuras)
 self.addEventListener('message', event => {
   if(event.data && event.data.type === 'SHOW_NOTIFICATION'){
@@ -65,7 +60,6 @@ self.addEventListener('message', event => {
     });
   }
 });
-
 // Al hacer clic en una notificación: abrir/enfocar la app
 self.addEventListener('notificationclick', event => {
   event.notification.close();
