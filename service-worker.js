@@ -2,7 +2,7 @@
 // Version: 1.0.0
 // Estrategia: cache-first para funcionar sin conexión
 
-const CACHE_NAME = 'foco-v8';
+const CACHE_NAME = 'foco-v9';
 const APP_SHELL = [
   './',
   './index.html',
