@@ -723,6 +723,17 @@
   .notif-banner p{ margin:0 0 10px; }
   .notif-banner p:last-child{ margin:0; }
   .notif-banner .btn{ font-size:13.5px; padding:9px 14px; flex:none; }
+  /* Google Calendar */
+  .gcal-card{ display:flex; gap:12px; align-items:flex-start; background:var(--surface); border:1px solid var(--line-soft); border-radius:18px; padding:14px; margin-bottom:14px; font-size:13.5px; line-height:1.45; box-shadow:var(--shadow-1); }
+  .gcal-card > svg{ width:22px; height:22px; color:var(--accent-ink); flex-shrink:0; margin-top:1px; }
+  .gcal-body{ flex:1; min-width:0; }
+  .gcal-title{ margin:0 0 4px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .gcal-sub{ margin:0 0 10px; color:var(--muted); }
+  .gcal-card.on .gcal-sub{ margin-bottom:10px; }
+  .gcal-card .btn{ font-size:13.5px; padding:9px 14px; flex:none; }
+  .gcal-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .gcal-dot{ width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block; }
+  .gcal-dot.ok{ background:#34C759; } .gcal-dot.syncing{ background:var(--amber); } .gcal-dot.needs-auth,.gcal-dot.error{ background:var(--accent); }
   .rec-card{
     display:flex; align-items:center; gap:12px;
     background:var(--surface); border:1px solid var(--line-soft);
@@ -4013,6 +4024,7 @@ function renderRecordatoriosView(){
       + '<p>Tu navegador no soporta notificaciones. Los recordatorios funcionan como lista.</p>'
       + '</div></div>';
   }
+  if(window.focoGcal) html += focoGcal.cardHtml();
   if(recs.items.length === 0){
     html += '<div class="empty-state">'
       + '<div class="empty-ic">'+ic('bell')+'</div>'
@@ -4108,6 +4120,7 @@ function attachRecListeners(){
   const main = document.getElementById('mainView');
   const askBtn = document.getElementById('askNotif');
   if(askBtn) askBtn.addEventListener('click', requestNotifPermission);
+  if(window.focoGcal){ focoGcal.bindCard(); focoGcal.onRecsChanged(); }
   main.querySelectorAll('[data-edit-rec]').forEach(btn => {
     btn.addEventListener('click', () => {
       openRecModal(btn.getAttribute('data-edit-rec'));
@@ -4115,6 +4128,7 @@ function attachRecListeners(){
   });
   main.querySelectorAll('[data-toggle-rec]').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if(window.focoGcal) focoGcal.touch();
       const id = btn.getAttribute('data-toggle-rec');
       const r = recs.items.find(x => x.id === id);
       if(!r) return;
@@ -4146,6 +4160,7 @@ function attachRecListeners(){
   });
 }
 function deleteRec(id){
+  if(window.focoGcal) focoGcal.touch();
   const r = recs.items.find(x => x.id === id);
   if(!r) return;
   if(confirm('¿Eliminar "'+r.titulo+'"?')){
@@ -4194,6 +4209,7 @@ function openRecModal(editId){
   document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id==='overlay') closeModal(); });
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
   document.getElementById('saveBtn').addEventListener('click', async () => {
+    if(window.focoGcal) focoGcal.touch();
     const titulo = document.getElementById('recTitulo').value.trim();
     if(!titulo){ document.getElementById('recTitulo').focus(); return; }
     const fecha = document.getElementById('recFecha').value;
@@ -4684,6 +4700,350 @@ if('serviceWorker' in navigator){
       .catch(err => console.warn('Service Worker no registrado:', err));
   });
 }
+</script>
+<script>
+// ============================================================
+// MÓDULO GOOGLE CALENDAR (aislado — no toca load/save/init)
+// Espeja los recordatorios de Foco en un calendario "Foco" de
+// Google Calendar, para que las alarmas las dispare Google en
+// todos tus dispositivos. Opt-in por dispositivo. Si algo falla,
+// Foco sigue funcionando igual que antes.
+// Reconciliación idempotente: cada recordatorio → evento con ID
+// determinístico (derivado de rec.id), así 2 dispositivos nunca
+// crean duplicados.
+// ============================================================
+(function(){
+  // Client ID OAuth (Google Cloud → APIs y servicios → Credenciales → "Web client")
+  const GCAL_CLIENT_ID = '604165665592-ep0u56emvsp9l5j23ot2n81a5vug6fpb.apps.googleusercontent.com';
+  const SCOPE = 'https://www.googleapis.com/auth/calendar.app.created';
+  const API = 'https://www.googleapis.com/calendar/v3';
+  const LS_ENABLED = 'foco_gcal_enabled';
+  const LS_TOKEN = 'foco_gcal_token';
+  const LS_CAL = 'foco_gcal_calendar_id';
+  const CAL_NAME = 'Foco';
+  const CONFIGURED = GCAL_CLIENT_ID.indexOf('__') !== 0 && /apps\.googleusercontent\.com$/.test(GCAL_CLIENT_ID);
+
+  let tokenClient = null, gisLoading = null, pendingTokenResolvers = [];
+  let syncTimer = null, syncing = false, resyncRequested = false;
+  let dataReady = false; // true cuando init() ya cargó los recordatorios
+  let status = 'idle'; // idle | syncing | ok | needs-auth | error
+  let lastError = '';
+
+  const isEnabled = () => CONFIGURED && localStorage.getItem(LS_ENABLED) === '1';
+  function getToken(){
+    try{
+      const t = JSON.parse(localStorage.getItem(LS_TOKEN) || 'null');
+      if(t && t.access_token && t.expires_at > Date.now() + 60000) return t.access_token;
+    }catch(e){}
+    return null;
+  }
+  function setStatus(s, err){
+    status = s; lastError = err || '';
+    const el = document.getElementById('gcalCard');
+    if(el && typeof currentTab !== 'undefined' && currentTab === 'recordatorios'){
+      el.outerHTML = cardHtml();
+      bindCard();
+    }
+  }
+
+  function loadGis(){
+    if(window.google && google.accounts && google.accounts.oauth2) return Promise.resolve();
+    if(gisLoading) return gisLoading;
+    gisLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true; s.onload = resolve; s.onerror = () => { gisLoading = null; reject(new Error('No se pudo cargar Google Identity')); };
+      document.head.appendChild(s);
+    });
+    return gisLoading;
+  }
+  function userEmail(){
+    try{ return (window.firebase && firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.email) || ''; }catch(e){ return ''; }
+  }
+  function ensureTokenClient(){
+    if(tokenClient || !(window.google && google.accounts && google.accounts.oauth2)) return tokenClient;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GCAL_CLIENT_ID,
+      scope: SCOPE,
+      login_hint: userEmail() || undefined,
+      callback: (resp) => {
+        const resolvers = pendingTokenResolvers; pendingTokenResolvers = [];
+        if(resp && resp.access_token){
+          localStorage.setItem(LS_TOKEN, JSON.stringify({ access_token: resp.access_token, expires_at: Date.now() + (Number(resp.expires_in)||3600)*1000 }));
+          resolvers.forEach(r => r.resolve(resp.access_token));
+        } else {
+          resolvers.forEach(r => r.reject(new Error((resp && resp.error) || 'Sin token')));
+        }
+      },
+      error_callback: (err) => {
+        const resolvers = pendingTokenResolvers; pendingTokenResolvers = [];
+        resolvers.forEach(r => r.reject(new Error((err && err.type) || 'popup_error')));
+      }
+    });
+    return tokenClient;
+  }
+  // DEBE llamarse de forma síncrona dentro de un click (gesto del usuario) para que no bloqueen el popup.
+  function requestTokenInGesture(forceConsent){
+    return new Promise((resolve, reject) => {
+      const tc = ensureTokenClient();
+      if(!tc){ reject(new Error('Google Identity no cargado')); return; }
+      pendingTokenResolvers.push({ resolve, reject });
+      tc.requestAccessToken({ prompt: forceConsent ? 'consent' : '' });
+    });
+  }
+
+  async function api(method, path, body){
+    const token = getToken();
+    if(!token){ const e = new Error('needs-auth'); e.needsAuth = true; throw e; }
+    const res = await fetch(API + path, {
+      method,
+      headers: Object.assign({ 'Authorization': 'Bearer ' + token }, body ? { 'Content-Type': 'application/json' } : {}),
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if(res.status === 401){ localStorage.removeItem(LS_TOKEN); const e = new Error('needs-auth'); e.needsAuth = true; throw e; }
+    if(res.status === 204) return null;
+    const data = await res.json().catch(() => null);
+    if(!res.ok){ const e = new Error((data && data.error && data.error.message) || ('HTTP '+res.status)); e.status = res.status; throw e; }
+    return data;
+  }
+
+  // --- Mapeo recordatorio → evento ---
+  function eventIdFor(rec){
+    // base32hex permite 0-9 a-v; hex (0-9 a-f) es subconjunto válido.
+    let hex = '';
+    const s = String(rec.id);
+    for(let i=0;i<s.length;i++) hex += s.charCodeAt(i).toString(16).padStart(2,'0');
+    return 'foco' + hex.replace(/[^0-9a-v]/g,'').slice(0, 1000);
+  }
+  const pad = n => String(n).padStart(2,'0');
+  function localDT(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':00'; }
+  function tz(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Santiago'; }catch(e){ return 'America/Santiago'; } }
+  function wanted(rec){
+    // Mismo criterio que las notificaciones locales: un único completado ya no avisa.
+    if(!rec || !rec.fecha || !rec.hora || !rec.titulo) return false;
+    return !(rec.completado && (rec.repeticion || 'ninguna') === 'ninguna');
+  }
+  function eventBody(rec){
+    const start = new Date(rec.fecha + 'T' + rec.hora);
+    const end = new Date(start.getTime() + 15*60000);
+    const zone = tz();
+    const rule = { diaria:'DAILY', semanal:'WEEKLY', mensual:'MONTHLY' }[rec.repeticion];
+    const body = {
+      summary: rec.titulo,
+      description: 'Recordatorio creado en Foco',
+      start: { dateTime: localDT(start), timeZone: zone },
+      end: { dateTime: localDT(end), timeZone: zone },
+      reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 0 }] },
+      transparency: 'transparent',
+      status: 'confirmed',
+      extendedProperties: { private: { focoId: String(rec.id) } }
+    };
+    body.recurrence = rule ? ['RRULE:FREQ=' + rule] : [];
+    body.extendedProperties.private.fh = hashOf(body);
+    return body;
+  }
+  function hashOf(body){
+    const s = JSON.stringify([body.summary, body.start, body.end, body.recurrence]);
+    let h = 5381; for(let i=0;i<s.length;i++){ h = ((h<<5)+h + s.charCodeAt(i)) | 0; }
+    return (h>>>0).toString(36);
+  }
+
+  async function ensureCalendar(){
+    let calId = localStorage.getItem(LS_CAL) || (typeof recs !== 'undefined' && recs.gcalCalendarId) || '';
+    if(calId){
+      try{ await api('GET', '/calendars/' + encodeURIComponent(calId)); localStorage.setItem(LS_CAL, calId); return calId; }
+      catch(e){ if(e.needsAuth) throw e; calId = ''; }
+    }
+    // Buscar uno existente llamado "Foco" (creado por esta app) antes de crear otro
+    try{
+      const list = await api('GET', '/users/me/calendarList?maxResults=250');
+      const found = (list && list.items || []).find(c => c.summary === CAL_NAME);
+      if(found) calId = found.id;
+    }catch(e){ if(e.needsAuth) throw e; }
+    if(!calId){
+      const created = await api('POST', '/calendars', { summary: CAL_NAME, description: 'Recordatorios de la app Foco', timeZone: tz() });
+      calId = created.id;
+      try{ await api('PATCH', '/users/me/calendarList/' + encodeURIComponent(calId) + '?colorRgbFormat=true', { backgroundColor:'#FF3B30', foregroundColor:'#FFFFFF' }); }catch(e){}
+    }
+    localStorage.setItem(LS_CAL, calId);
+    if(typeof recs !== 'undefined' && recs.gcalCalendarId !== calId){
+      recs.gcalCalendarId = calId; // campo aditivo, se sincroniza entre dispositivos
+      if(typeof debouncedSaveRecs === 'function') debouncedSaveRecs();
+    }
+    return calId;
+  }
+
+  async function listAllEvents(calId){
+    const out = []; let pageToken = '';
+    do{
+      const q = '?maxResults=2500&showDeleted=false&singleEvents=false' + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
+      const data = await api('GET', '/calendars/' + encodeURIComponent(calId) + '/events' + q);
+      (data.items || []).forEach(ev => out.push(ev));
+      pageToken = data.nextPageToken || '';
+    } while(pageToken);
+    return out;
+  }
+
+  async function reconcile(){
+    const calId = await ensureCalendar();
+    const cal = '/calendars/' + encodeURIComponent(calId) + '/events';
+    const existing = await listAllEvents(calId);
+    const byId = {}; existing.forEach(ev => { byId[ev.id] = ev; });
+    const items = (typeof recs !== 'undefined' && recs.items) ? recs.items : [];
+    const keep = {};
+    let changed = 0;
+    for(const rec of items){
+      if(!wanted(rec)) continue;
+      const id = eventIdFor(rec);
+      keep[id] = true;
+      const body = eventBody(rec);
+      const ev = byId[id];
+      const cur = ev && ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.fh;
+      if(ev && cur === body.extendedProperties.private.fh) continue;
+      if(ev){
+        await api('PUT', cal + '/' + id, body);
+      } else {
+        try{ await api('POST', cal, Object.assign({ id }, body)); }
+        catch(e){
+          if(e.status === 409){ await api('PUT', cal + '/' + id, body); } // existía borrado → se revive
+          else throw e;
+        }
+      }
+      changed++;
+    }
+    for(const ev of existing){
+      const isFoco = ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.focoId;
+      if(isFoco && !keep[ev.id]){
+        try{ await api('DELETE', cal + '/' + ev.id); changed++; }catch(e){ if(e.status !== 410 && e.status !== 404) throw e; }
+      }
+    }
+    return changed;
+  }
+
+  async function runSync(){
+    if(!isEnabled() || !dataReady) return;
+    if(syncing){ resyncRequested = true; return; }
+    if(!getToken()){ setStatus('needs-auth'); return; }
+    syncing = true; setStatus('syncing');
+    try{
+      await reconcile();
+      localStorage.setItem('foco_gcal_last_sync', String(Date.now()));
+      setStatus('ok');
+    }catch(e){
+      console.warn('Google Calendar sync:', e);
+      if(e.needsAuth) setStatus('needs-auth'); else setStatus('error', e.message);
+    }finally{
+      syncing = false;
+      if(resyncRequested){ resyncRequested = false; scheduleSync(300); }
+    }
+  }
+  function scheduleSync(delay){
+    if(!isEnabled()) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(runSync, typeof delay === 'number' ? delay : 1500);
+  }
+
+  // --- UI: tarjeta en Recordatorios ---
+  function relTime(ms){
+    if(!ms) return '';
+    const m = Math.round((Date.now() - ms) / 60000);
+    if(m < 1) return 'recién';
+    if(m < 60) return 'hace ' + m + ' min';
+    const h = Math.round(m/60); if(h < 24) return 'hace ' + h + ' h';
+    return 'hace ' + Math.round(h/24) + ' d';
+  }
+  function cardHtml(){
+    if(!CONFIGURED) return '<div id="gcalCard" hidden></div>';
+    const cal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+    if(!isEnabled()){
+      return '<div class="gcal-card" id="gcalCard">'+cal+'<div class="gcal-body">'
+        + '<p class="gcal-title">Avisos con Google Calendar</p>'
+        + '<p class="gcal-sub">Copia tus recordatorios a un calendario "Foco" y Google te avisa en el celular, PC y reloj, aunque Foco esté cerrado.</p>'
+        + '<button class="btn btn-primary" id="gcalConnect">Conectar Google Calendar</button>'
+        + '</div></div>';
+    }
+    let line, btn = '';
+    if(status === 'syncing') line = 'Sincronizando…';
+    else if(status === 'needs-auth'){ line = 'Hay que reconectar (Google pide confirmar cada cierto tiempo).'; btn = '<button class="btn btn-primary" id="gcalReconnect">Reconectar</button>'; }
+    else if(status === 'error'){ line = 'Error al sincronizar: ' + (typeof escapeHtml === 'function' ? escapeHtml(lastError) : lastError); btn = '<button class="btn btn-secondary" id="gcalRetry">Reintentar</button>'; }
+    else { const last = Number(localStorage.getItem('foco_gcal_last_sync')) || 0; line = last ? 'Sincronizado ' + relTime(last) : 'Conectado'; }
+    return '<div class="gcal-card on" id="gcalCard">'+cal+'<div class="gcal-body">'
+      + '<p class="gcal-title">Google Calendar <span class="gcal-dot '+status+'"></span></p>'
+      + '<p class="gcal-sub">'+line+'</p>'
+      + '<div class="gcal-actions">'+btn+'<button class="btn btn-secondary" id="gcalMenu">Opciones</button></div>'
+      + '</div></div>';
+  }
+  function connectFlow(forceConsent){
+    // Síncrono dentro del click: si GIS ya está cargado pedimos token de inmediato.
+    const go = () => requestTokenInGesture(forceConsent).then(() => {
+      localStorage.setItem(LS_ENABLED, '1');
+      if(typeof showToast === 'function') showToast('Google Calendar conectado ✓');
+      runSync();
+    }).catch(e => {
+      console.warn('GCal auth:', e);
+      if(typeof showToast === 'function') showToast('No se pudo conectar con Google Calendar');
+      setStatus(isEnabled() ? 'needs-auth' : 'idle');
+    });
+    if(window.google && google.accounts && google.accounts.oauth2) return go();
+    loadGis().then(() => {
+      if(typeof showToast === 'function') showToast('Listo, toca de nuevo para conectar');
+    }).catch(() => { if(typeof showToast === 'function') showToast('Sin conexión con Google'); });
+  }
+  function bindCard(){
+    if(CONFIGURED) loadGis().catch(()=>{}); // precarga: así el primer toque ya abre el popup de Google
+    const c = document.getElementById('gcalConnect'); if(c) c.addEventListener('click', () => connectFlow(true));
+    const r = document.getElementById('gcalReconnect'); if(r) r.addEventListener('click', () => connectFlow(false));
+    const t = document.getElementById('gcalRetry'); if(t) t.addEventListener('click', () => { if(getToken()) runSync(); else connectFlow(false); });
+    const m = document.getElementById('gcalMenu');
+    if(m) m.addEventListener('click', () => {
+      const actions = [
+        { label:'Sincronizar ahora', icon:'repeat', onClick: () => { if(getToken()) runSync(); else connectFlow(false); } },
+        { label:'Desconectar de este dispositivo', icon:'trash', danger:true, onClick: () => {
+            if(!confirm('¿Desconectar Google Calendar en este dispositivo?\n\nLos eventos ya creados quedan en tu calendario "Foco" (puedes borrar ese calendario desde Google Calendar si no lo quieres).')) return;
+            const tok = getToken();
+            localStorage.removeItem(LS_ENABLED); localStorage.removeItem(LS_TOKEN);
+            try{ if(tok && window.google && google.accounts) google.accounts.oauth2.revoke(tok, ()=>{}); }catch(e){}
+            setStatus('idle'); if(typeof renderTab === 'function') renderTab();
+        } }
+      ];
+      if(typeof openActionSheet === 'function') openActionSheet({ title:'Google Calendar', actions });
+    });
+  }
+
+  // --- API pública para el script principal ---
+  window.focoGcal = {
+    cardHtml,
+    bindCard,
+    // Llamar tras cualquier cambio en recordatorios (re-render).
+    onRecsChanged(){ if(isEnabled()){ loadGis().catch(()=>{}); scheduleSync(); } },
+    // Llamar SÍNCRONO dentro de un click: si el token venció, lo renueva aprovechando el gesto.
+    touch(){
+      if(!isEnabled() || getToken()) return;
+      if(window.google && google.accounts && google.accounts.oauth2){
+        requestTokenInGesture(false).then(() => scheduleSync(200)).catch(() => setStatus('needs-auth'));
+      }
+    },
+    _debug: { eventIdFor, eventBody, wanted, reconcile, runSync, status: () => status }
+  };
+
+  // Arranque: init() (protegida) llama a scheduleAllNotifications() justo después de
+  // cargar todos los datos. La envolvemos para saber cuándo es seguro reconciliar
+  // (si sincronizáramos antes, veríamos 0 recordatorios y borraríamos eventos).
+  const origSchedule = window.scheduleAllNotifications;
+  if(typeof origSchedule === 'function'){
+    window.scheduleAllNotifications = function(){
+      const r = origSchedule.apply(this, arguments);
+      if(!dataReady){ dataReady = true; if(isEnabled()) scheduleSync(2500); }
+      return r;
+    };
+  } else {
+    setTimeout(() => { dataReady = true; scheduleSync(); }, 8000);
+  }
+  if(isEnabled()) loadGis().catch(()=>{});
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible' && isEnabled()) scheduleSync(1000);
+  });
+})();
 </script>
 </body>
 </html>
