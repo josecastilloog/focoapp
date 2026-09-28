@@ -1,7 +1,7 @@
 // Foco - Service Worker
 // Version: 1.1.0
 // Estrategia: cache-first para funcionar sin conexión
-const CACHE_NAME = 'foco-v19';
+const CACHE_NAME = 'foco-v20';
 const APP_SHELL = [
   './',
   './index.html',
