@@ -684,6 +684,50 @@
   }
   .org-view-toggle{ margin-bottom:18px; }
   .org-view-toggle .view-toggle-btn{ flex:1; }
+  /* v21 — resumen semanal */
+  .resumen-msg{
+    background:linear-gradient(135deg, var(--accent-soft), rgba(255,59,48,0.04));
+    border:1px solid var(--accent-line);
+    border-radius:18px; padding:16px 18px; margin-bottom:16px;
+  }
+  .resumen-msg p{ margin:0; font-size:14px; line-height:1.55; color:var(--text); font-weight:500; }
+  .resumen-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:14px; }
+  @media (max-width:360px){ .resumen-grid{ grid-template-columns:1fr; } }
+  .resumen-card{
+    background:var(--surface); border:1px solid var(--line-soft);
+    border-radius:18px; padding:14px 14px 12px;
+    box-shadow:var(--shadow-1);
+    display:flex; flex-direction:column;
+  }
+  .resumen-card-head{
+    margin:0 0 6px; font-size:11px; font-weight:750;
+    text-transform:uppercase; letter-spacing:0.08em; color:var(--muted);
+  }
+  .resumen-num{
+    margin:0 0 2px; font-size:28px; font-weight:800; letter-spacing:-0.02em;
+    color:var(--text); line-height:1; font-variant-numeric:tabular-nums;
+  }
+  .resumen-unit{ font-size:14px; font-weight:600; color:var(--muted); margin-left:2px; }
+  .resumen-sub{ margin:0 0 10px; font-size:11.5px; color:var(--muted); font-weight:500; line-height:1.4; }
+  .resumen-bar{ height:5px; border-radius:3px; background:var(--surface-2); overflow:hidden; margin-bottom:8px; }
+  .resumen-bar-fill{ height:100%; border-radius:3px; transition:width .5s var(--ease-out); }
+  .resumen-foot{ margin:4px 0 0; font-size:11.5px; color:var(--text-2); line-height:1.4; }
+  .resumen-foot strong{ color:var(--text); font-weight:700; }
+  .resumen-pills{ display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+  .resumen-pill{
+    padding:3px 9px; border-radius:999px; background:var(--surface-2);
+    font-size:11px; font-weight:650; color:var(--text-2);
+  }
+  .resumen-pill strong{ color:var(--text); font-weight:750; }
+  .resumen-pill.danger{ background:rgba(255,107,94,0.14); color:var(--danger); }
+  .resumen-pill.amber{ background:var(--amber-dim); color:var(--amber); }
+  .resumen-pill.ok{ background:var(--success-dim); color:var(--success); }
+  .resumen-tip{
+    margin-top:4px; padding:12px 14px;
+    background:rgba(255,107,94,0.08); border:1px solid rgba(255,107,94,0.2);
+    border-radius:14px; font-size:12.5px; color:var(--text-2);
+  }
+  .resumen-tip strong{ color:var(--danger); }
   .org-week-nav{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:18px; }
   .org-week-label{ font-size:14px; font-weight:700; min-width:110px; text-align:center; font-variant-numeric:tabular-nums; }
   .org-day-block{ margin-bottom:18px; }
@@ -699,10 +743,40 @@
   }
   .org-block-time{ font-weight:650; color:var(--text-2); flex-shrink:0; min-width:86px; font-variant-numeric:tabular-nums; }
   .org-block-title{ flex:1; min-width:0; font-weight:600; }
+  .org-block-title.editable{ cursor:pointer; }
+  .org-block-title.editable:active{ opacity:0.6; }
   .org-block-tag{ font-size:10px; font-weight:750; text-transform:uppercase; letter-spacing:0.04em; padding:3px 8px; border-radius:6px; flex-shrink:0; }
   .org-tag-clase{ background:var(--surface-2); color:var(--muted); }
   .org-tag-estudio{ background:var(--accent-soft); color:var(--accent-ink); }
   .org-tag-actividad{ background:var(--amber-dim); color:var(--amber); }
+  /* v21 — check en bloques del calendario (estudio y actividad) */
+  .cal-check{
+    width:22px;height:22px;border-radius:50%;border:2px solid var(--line-bright);
+    flex-shrink:0; background:transparent; cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center; color:transparent;
+    transition:background var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-spring);
+  }
+  .cal-check svg{ width:12px; height:12px; stroke-width:3; }
+  .cal-check:active{ transform:scale(0.85); }
+  .cal-check.done{ background:var(--success); border-color:var(--success); color:#09090B; }
+  .cal-check-ph{ width:22px; height:22px; flex-shrink:0; }
+  .org-block-item.is-done .org-block-title{ text-decoration:line-through; color:var(--muted); }
+  .org-block-item.is-done{ opacity:0.6; }
+  /* v21 — chips de preset del nuevo modal "Agregar al horario" */
+  .cal-preset-row{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .cal-preset-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:9px 14px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line-soft);
+    color:var(--text-2); font-size:13px; font-weight:650; cursor:pointer; font-family:inherit;
+    transition:background var(--dur-fast) ease, color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-spring);
+  }
+  .cal-preset-chip:active{ transform:scale(0.95); }
+  .cal-preset-chip.active{ background:var(--accent-soft); color:var(--accent-ink); border-color:var(--accent-line); }
+  .cal-preset-emoji{ font-size:15px; line-height:1; }
+  .cal-time-row{ display:flex; gap:10px; }
+  .cal-time-col{ flex:1; }
+  .cal-time-col .name-input{ width:100%; }
+  .cal-time-col .field-label{ display:block; margin-bottom:6px; }
   .preset-chip{
     padding:9px 15px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line-soft);
     color:var(--text); font-size:13px; font-weight:650; cursor:pointer; margin-right:8px; margin-bottom:8px; font-family:inherit;
@@ -2987,9 +3061,12 @@ function tareaCardHtml(t, today){
 function buildOrganizacionHtml(){
   let html = '<div class="view-toggle org-view-toggle">'
     + '<button class="view-toggle-btn'+(orgView==='temas'?' active':'')+'" data-org-view="temas">Temas</button>'
-    + '<button class="view-toggle-btn'+(orgView==='horario'?' active':'')+'" data-org-view="horario">Horario semanal</button>'
+    + '<button class="view-toggle-btn'+(orgView==='horario'?' active':'')+'" data-org-view="horario">Horario</button>'
+    + '<button class="view-toggle-btn'+(orgView==='resumen'?' active':'')+'" data-org-view="resumen">Resumen</button>'
     + '</div>';
-  html += orgView === 'horario' ? buildOrgHorarioHtml() : buildEstudioHtml();
+  if(orgView === 'horario') html += buildOrgHorarioHtml();
+  else if(orgView === 'resumen') html += buildResumenSemanalHtml();
+  else html += buildEstudioHtml();
   return html;
 }
 function buildOrgHorarioHtml(){
@@ -3010,14 +3087,14 @@ function buildOrgHorarioHtml(){
     const isToday = iso === todayIso;
     const clases = uni.horario.filter(b => b.dia === dow).map(b => {
       const ramo = ramoById(b.ramoId);
-      return { tipo:'clase', titulo: ramo ? ramo.nombre : 'Ramo eliminado', hi:b.horaInicio, hf:b.horaFin, color: ramo ? ramo.color : 'var(--line)', id:null };
+      return { tipo:'clase', titulo: ramo ? ramo.nombre : 'Ramo eliminado', hi:b.horaInicio, hf:b.horaFin, color: ramo ? ramo.color : 'var(--line)', id:null, done:false };
     });
     const estudios = uni.estudio.filter(e => e.fecha === iso).map(e => {
       const ramo = e.ramoId ? ramoById(e.ramoId) : null;
-      return { tipo:'estudio', titulo: e.texto, hi: e.hora, hf: e.horaFin, color: ramo ? ramo.color : 'var(--mint)', id:null };
+      return { tipo:'estudio', titulo: e.texto, hi: e.hora, hf: e.horaFin, color: ramo ? ramo.color : 'var(--mint)', id: e.id, done: !!e.done };
     });
     const actividades = uni.actividades.filter(a => a.fecha === iso).map(a => ({
-      tipo:'actividad', titulo: a.titulo, hi: a.horaInicio, hf: a.horaFin, color: 'var(--amber)', id: a.id
+      tipo:'actividad', titulo: a.titulo, hi: a.horaInicio, hf: a.horaFin, color: 'var(--amber)', id: a.id, done: !!a.done
     }));
     const all = clases.concat(estudios).concat(actividades).sort((a,b) => (a.hi||'').localeCompare(b.hi||''));
     html += '<div class="org-day-block">'
@@ -3027,15 +3104,187 @@ function buildOrgHorarioHtml(){
     } else {
       all.forEach(item => {
         const tagLabel = { clase:'Clase', estudio:'Estudio', actividad:'Entreno' }[item.tipo];
-        html += '<div class="org-block-item" style="--c:'+item.color+'">'
+        const chequeable = item.tipo !== 'clase';
+        const checkAttr = chequeable ? ' data-cal-check="'+item.tipo+'|'+item.id+'"' : '';
+        const editAttr = chequeable ? ' data-cal-edit="'+item.tipo+'|'+item.id+'"' : '';
+        html += '<div class="org-block-item'+(item.done?' is-done':'')+'" style="--c:'+item.color+'">'
+          + (chequeable
+              ? '<button class="cal-check'+(item.done?' done':'')+'"'+checkAttr+' aria-label="Completar">'+ic('check')+'</button>'
+              : '<span class="cal-check-ph" aria-hidden="true"></span>')
           + '<span class="org-block-time">'+(item.hi||'')+(item.hf?' – '+item.hf:'')+'</span>'
-          + '<span class="org-block-title">'+escapeHtml(item.titulo)+'</span>'
+          + '<span class="org-block-title'+(chequeable?' editable':'')+'"'+editAttr+'>'+escapeHtml(item.titulo)+'</span>'
           + '<span class="org-block-tag org-tag-'+item.tipo+'">'+tagLabel+'</span>'
-          + (item.tipo==='actividad' ? '<button class="del-link" data-del-actividad="'+item.id+'" aria-label="Eliminar">'+ic('trash')+'</button>' : '')
           + '</div>';
       });
     }
     html += '</div>';
+  }
+  return html;
+}
+// =====================================================================
+// v21 — Resumen semanal: hábitos aplicables cumplidos, bloques de estudio
+// hechos vs. planeados, tareas completadas / vencidas / por vencer, entrenos
+// hechos. Con un mensaje contextual (Jose, ICI 2° año) que se adapta al
+// desempeño de la semana. Lee de la semana anclada en orgWeekAnchor
+// (lunes a domingo) — mismo rango que la vista Horario.
+// =====================================================================
+function fmtHoras(min){
+  if(min <= 0) return '0h';
+  const h = min / 60;
+  if(h >= 10) return Math.round(h)+'h';
+  return (Math.round(h*10)/10).toString().replace('.',',')+'h';
+}
+function minutosBloque(hi, hf){
+  if(!hi || !hf) return 0;
+  const [h1,m1] = hi.split(':').map(Number);
+  const [h2,m2] = hf.split(':').map(Number);
+  const diff = (h2*60+m2) - (h1*60+m1);
+  return diff > 0 ? diff : 0;
+}
+function pickMsgResumen(ctx){
+  // ctx: { pctHab, habAplic, habHechos, estudioHechos, estudioPlan, tareasHechas, tareasVencidas, entrenos, totalEstudioMin, hoyPerfecto, cualquierDato }
+  const nom = 'Jose';
+  if(!ctx.cualquierDato){
+    return { tono:'neutro', texto: nom+', esta semana todavía está en blanco. Agrega algún bloque de estudio o marca un hábito para que pueda armarte el resumen.' };
+  }
+  const bits = [];
+  // apertura según hábitos
+  if(ctx.habAplic === 0 && ctx.estudioPlan === 0 && ctx.tareasHechas === 0){
+    bits.push(nom+', semana tranquila. Si quieres, planifiquemos un par de bloques.');
+  } else if(ctx.pctHab >= 80 && ctx.estudioHechos >= Math.max(1, ctx.estudioPlan*0.7)){
+    bits.push(nom+', semana sólida. Hábitos al '+ctx.pctHab+'% y estudio avanzando. Así se construye el ingeniero que quieres ser — paso a paso.');
+  } else if(ctx.pctHab >= 60){
+    bits.push(nom+', buena semana en lo general. '+(ctx.tareasVencidas>0 ? 'Ojo con esas '+ctx.tareasVencidas+' tareas vencidas, ponles un hueco mañana.' : 'Sigue con esa consistencia.'));
+  } else if(ctx.pctHab >= 30){
+    bits.push(nom+', semana irregular. Sin dramatismo — enfócate en un hábito clave y una tarea prioritaria para los próximos días.');
+  } else if(ctx.habAplic > 0){
+    bits.push(nom+', semana floja en hábitos ('+ctx.pctHab+'%). Reiniciar es parte del proceso. Mañana una cosa a la vez.');
+  }
+  if(ctx.hoyPerfecto){
+    bits.push('Hoy marcaste todos tus hábitos aplicables — anótale un día perfecto.');
+  }
+  if(ctx.totalEstudioMin >= 60 && ctx.estudioPlan > 0){
+    bits.push('Llevas ~'+fmtHoras(ctx.totalEstudioMin)+' de estudio planificado esta semana.');
+  }
+  return { tono:'ok', texto: bits.join(' ') };
+}
+function buildResumenSemanalHtml(){
+  const monday = new Date(orgWeekAnchor + 'T00:00:00');
+  const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+  const rangeLabel = String(monday.getDate()).padStart(2,'0')+'/'+String(monday.getMonth()+1).padStart(2,'0')
+    + ' – ' + String(sunday.getDate()).padStart(2,'0')+'/'+String(sunday.getMonth()+1).padStart(2,'0');
+  const todayIso = todayISO();
+  const semanaIsos = [];
+  for(let i=0;i<7;i++){ const d = new Date(monday); d.setDate(d.getDate()+i); semanaIsos.push(isoOf(d)); }
+
+  // Hábitos: por cada día, aplicables vs cumplidos. Cuenta solo hasta hoy
+  // (días futuros de la semana no inflan el denominador).
+  let habAplic = 0, habHechos = 0;
+  let bestHabName = null, bestHabPct = -1;
+  const hastaIso = semanaIsos[semanaIsos.length-1] < todayIso ? semanaIsos[semanaIsos.length-1] : todayIso;
+  const diasContar = semanaIsos.filter(iso => iso <= hastaIso);
+  (state.habits || []).forEach(h => {
+    let a = 0, hechos = 0;
+    diasContar.forEach(iso => {
+      if(h.createdAt && h.createdAt > iso) return;
+      if(!habitAppliesOnISO(h, iso)) return;
+      a++;
+      if((state.completions[h.id]||{})[iso]) hechos++;
+    });
+    habAplic += a;
+    habHechos += hechos;
+    if(a > 0){
+      const pct = Math.round(hechos / a * 100);
+      if(pct > bestHabPct){ bestHabPct = pct; bestHabName = h.name; }
+    }
+  });
+  const pctHab = habAplic > 0 ? Math.round(habHechos / habAplic * 100) : 0;
+
+  // Estudio de la semana (planeados vs hechos; minutos)
+  const estudiosSem = (uni.estudio || []).filter(e => semanaIsos.includes(e.fecha));
+  const estudioPlan = estudiosSem.length;
+  const estudioHechos = estudiosSem.filter(e => e.done).length;
+  let totalEstudioMin = 0;
+  estudiosSem.forEach(e => { if(e.done || e.fecha > todayIso || e.fecha === todayIso) totalEstudioMin += minutosBloque(e.hora, e.horaFin); });
+
+  // Entrenos (actividades) de la semana
+  const actsSem = (uni.actividades || []).filter(a => semanaIsos.includes(a.fecha));
+  const entrenosHechos = actsSem.filter(a => a.done).length;
+  const entrenosTotal = actsSem.length;
+
+  // Tareas: completadas con fecha de la semana + vencidas (fecha pasada, no completadas) + por vencer esta semana
+  const todasTareas = uni.tareas || [];
+  const tareasHechasSem = todasTareas.filter(t => t.completada && semanaIsos.includes(t.fecha)).length;
+  const tareasVencidas = todasTareas.filter(t => !t.completada && t.fecha < todayIso).length;
+  const tareasPorVencer = todasTareas.filter(t => !t.completada && semanaIsos.includes(t.fecha) && t.fecha >= todayIso).length;
+
+  // ¿Hoy día perfecto?
+  let hoyPerfecto = false;
+  if((state.habits || []).length > 0){
+    const relHoy = (state.habits || []).filter(h => (!h.createdAt || h.createdAt <= todayIso) && habitAppliesOnISO(h, todayIso));
+    if(relHoy.length > 0){
+      hoyPerfecto = relHoy.every(h => (state.completions[h.id]||{})[todayIso]);
+    }
+  }
+
+  const cualquierDato = habAplic > 0 || estudioPlan > 0 || actsSem.length > 0 || tareasHechasSem > 0 || tareasVencidas > 0 || tareasPorVencer > 0;
+  const msg = pickMsgResumen({ pctHab, habAplic, habHechos, estudioHechos, estudioPlan, tareasHechas: tareasHechasSem, tareasVencidas, entrenos:entrenosHechos, totalEstudioMin, hoyPerfecto, cualquierDato });
+
+  let html = '<div class="org-week-nav">'
+    + '<button class="icon-action-btn" id="orgWeekPrev" aria-label="Semana anterior">'+ic('chevL')+'</button>'
+    + '<span class="org-week-label">'+rangeLabel+'</span>'
+    + '<button class="icon-action-btn" id="orgWeekNext" aria-label="Semana siguiente">'+ic('chevR')+'</button>'
+    + '</div>';
+  html += '<div class="resumen-msg"><p>'+escapeHtml(msg.texto)+'</p></div>';
+
+  // Grid de 4 tarjetas: Hábitos, Estudio, Tareas, Entrenos
+  html += '<div class="resumen-grid">';
+  // Hábitos
+  html += '<div class="resumen-card">'
+    + '<p class="resumen-card-head">Hábitos</p>'
+    + '<p class="resumen-num">'+pctHab+'<span class="resumen-unit">%</span></p>'
+    + '<p class="resumen-sub">'+habHechos+' de '+habAplic+' aplicables esta semana</p>'
+    + '<div class="resumen-bar"><div class="resumen-bar-fill" style="width:'+pctHab+'%;background:var(--accent)"></div></div>'
+    + (bestHabName ? '<p class="resumen-foot">Más constante: <strong>'+escapeHtml(bestHabName)+'</strong></p>' : '')
+    + '</div>';
+  // Estudio
+  const pctEst = estudioPlan > 0 ? Math.round(estudioHechos/estudioPlan*100) : 0;
+  html += '<div class="resumen-card">'
+    + '<p class="resumen-card-head">Estudio</p>'
+    + '<p class="resumen-num">'+estudioHechos+'<span class="resumen-unit">/'+estudioPlan+'</span></p>'
+    + '<p class="resumen-sub">bloques completados</p>'
+    + '<div class="resumen-bar"><div class="resumen-bar-fill" style="width:'+pctEst+'%;background:var(--accent-ink)"></div></div>'
+    + (totalEstudioMin > 0 ? '<p class="resumen-foot"><strong>'+fmtHoras(totalEstudioMin)+'</strong> planificadas</p>' : '<p class="resumen-foot">Agrega bloques con el <strong>+</strong></p>')
+    + '</div>';
+  // Tareas
+  html += '<div class="resumen-card">'
+    + '<p class="resumen-card-head">Tareas</p>'
+    + '<p class="resumen-num">'+tareasHechasSem+'<span class="resumen-unit"> ✓</span></p>'
+    + '<p class="resumen-sub">completadas esta semana</p>'
+    + '<div class="resumen-pills">'
+    + (tareasVencidas>0 ? '<span class="resumen-pill danger">'+tareasVencidas+' vencidas</span>' : '')
+    + (tareasPorVencer>0 ? '<span class="resumen-pill amber">'+tareasPorVencer+' por vencer</span>' : '')
+    + ((tareasVencidas===0 && tareasPorVencer===0) ? '<span class="resumen-pill ok">Al día</span>' : '')
+    + '</div>'
+    + '</div>';
+  // Entrenos
+  const entChips = ['futsal','gym','futbol'].map(k => {
+    const cuenta = actsSem.filter(a => (a.tipo||'otro')===k).length;
+    if(cuenta === 0) return '';
+    const hechos = actsSem.filter(a => (a.tipo||'otro')===k && a.done).length;
+    return '<span class="resumen-pill">'+calPresetByKey(k).label+' <strong>'+hechos+'/'+cuenta+'</strong></span>';
+  }).filter(Boolean).join('');
+  html += '<div class="resumen-card">'
+    + '<p class="resumen-card-head">Entrenos</p>'
+    + '<p class="resumen-num">'+entrenosHechos+'<span class="resumen-unit">/'+entrenosTotal+'</span></p>'
+    + '<p class="resumen-sub">sesiones hechas</p>'
+    + (entChips ? '<div class="resumen-pills">'+entChips+'</div>' : '<p class="resumen-foot">Sin entrenos planificados</p>')
+    + '</div>';
+  html += '</div>';
+
+  // Nota al pie si hay vencidas
+  if(tareasVencidas > 0){
+    html += '<div class="resumen-tip">Tienes '+tareasVencidas+' tarea'+(tareasVencidas===1?'':'s')+' vencida'+(tareasVencidas===1?'':'s')+'. Abre <strong>Tareas</strong> para ordenarlas.</div>';
   }
   return html;
 }
@@ -3143,6 +3392,31 @@ function attachUniListeners(){
         renderUniversidadView();
         debouncedSaveUni();
       }
+    });
+  });
+  // v21 — check y edit de bloques del calendario (estudio o actividad)
+  main.querySelectorAll('[data-cal-check]').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const [kind, id] = btn.getAttribute('data-cal-check').split('|');
+      if(kind === 'estudio'){
+        const item = uni.estudio.find(x => x.id === id);
+        if(!item) return;
+        item.done = !item.done;
+      } else if(kind === 'actividad'){
+        const item = uni.actividades.find(x => x.id === id);
+        if(!item) return;
+        item.done = !item.done;
+      }
+      renderUniversidadView();
+      debouncedSaveUni();
+    });
+  });
+  main.querySelectorAll('[data-cal-edit]').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const [kind, id] = el.getAttribute('data-cal-edit').split('|');
+      openCalendarEditModal(kind, id);
     });
   });
   main.querySelectorAll('.day-chip').forEach(chip => {
@@ -4570,49 +4844,209 @@ function openEstudioModal(){
   });
   setTimeout(()=>{ document.getElementById('estudioTexto').focus(); }, 50);
 }
-function openActividadModal(){
+// =====================================================================
+// v21 — Modal unificado "Agregar al horario": Estudio / Futsal / Gym / Fútbol.
+// Reemplaza el antiguo openActividadModal (que solo creaba entrenos).
+// Modelo aditivo: 'uni.actividades[i].done' (bool) y 'uni.actividades[i].tipo'
+// ('futsal'|'gym'|'futbol'|'otro'). Los registros viejos sin estos campos
+// siguen funcionando (done => false, tipo => 'otro').
+// =====================================================================
+const CAL_PRESETS = [
+  { key:'estudio',  label:'Estudio', emoji:'📚', defaultTime:['18:00','19:00'] },
+  { key:'futsal',   label:'Futsal',  emoji:'⚽', defaultTime:['19:00','20:00'] },
+  { key:'gym',      label:'Gym',     emoji:'💪', defaultTime:['19:00','20:00'] },
+  { key:'futbol',   label:'Fútbol',  emoji:'🏃', defaultTime:['19:00','20:00'] }
+];
+function calPresetByKey(k){ return CAL_PRESETS.find(p => p.key === k) || CAL_PRESETS[1]; }
+function openCalendarAddModal(opts){
+  opts = opts || {};
+  let tipoSel = opts.tipo || 'estudio';
+  const fechaDef = opts.fecha || orgWeekAnchor || todayISO();
   const root = document.getElementById('modalRoot');
-  const presets = ['Futsal','Gym','Fútbol'];
-  root.innerHTML = '<div class="modal-overlay" id="overlay">'
-    + '<div class="modal">'
-    + '<h2>Nuevo entrenamiento</h2>'
-    + '<span class="field-label">Actividad</span>'
-    + '<div class="emoji-row" id="actividadPresets">'
-    + presets.map(p => '<button type="button" class="preset-chip" data-preset="'+p+'">'+p+'</button>').join('')
-    + '</div>'
-    + '<input class="name-input" id="actividadTitulo" placeholder="Ej: Futsal" maxlength="40">'
-    + '<span class="field-label">Fecha</span>'
-    + '<input type="date" class="name-input" id="actividadFecha" value="'+todayISO()+'">'
-    + '<span class="field-label">Hora inicio</span>'
-    + '<input type="time" class="name-input" id="actividadHoraInicio" value="19:00">'
-    + '<span class="field-label">Hora término</span>'
-    + '<input type="time" class="name-input" id="actividadHoraFin" value="20:00">'
-    + '<div class="modal-actions">'
-    + '<button class="btn btn-secondary" id="cancelBtn">Cancelar</button>'
-    + '<button class="btn btn-primary" id="saveBtn">Crear</button>'
-    + '</div></div></div>';
-  document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id==='overlay') closeModal(); });
-  document.getElementById('cancelBtn').addEventListener('click', closeModal);
-  document.querySelectorAll('#actividadPresets .preset-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.getElementById('actividadTitulo').value = chip.getAttribute('data-preset');
+  function render(){
+    const p = calPresetByKey(tipoSel);
+    const ramoOptions = '<option value="">Sin ramo (general)</option>' + uni.ramos.map(r => '<option value="'+r.id+'">'+escapeHtml(r.nombre)+'</option>').join('');
+    const chipsHtml = CAL_PRESETS.map(c =>
+      '<button type="button" class="cal-preset-chip'+(c.key===tipoSel?' active':'')+'" data-cal-preset="'+c.key+'">'
+      + '<span class="cal-preset-emoji">'+c.emoji+'</span>'
+      + '<span>'+c.label+'</span>'
+      + '</button>'
+    ).join('');
+    const esEstudio = tipoSel === 'estudio';
+    const placeholder = esEstudio ? 'Ej: Repasar capítulo 4' : 'Ej: '+p.label;
+    const defVal = (opts.titulo != null) ? opts.titulo : (esEstudio ? '' : p.label);
+    const prev = document.getElementById('calAddTitulo');
+    const prevVal = prev ? prev.value : defVal;
+    const hiPrev = document.getElementById('calAddHoraInicio');
+    const hfPrev = document.getElementById('calAddHoraFin');
+    const feprev = document.getElementById('calAddFecha');
+    const raPrev = document.getElementById('calAddRamo');
+    const hiVal = hiPrev ? hiPrev.value : p.defaultTime[0];
+    const hfVal = hfPrev ? hfPrev.value : p.defaultTime[1];
+    const feVal = feprev ? feprev.value : fechaDef;
+    const raVal = raPrev ? raPrev.value : '';
+    root.innerHTML = '<div class="modal-overlay" id="overlay">'
+      + '<div class="modal">'
+      + '<div class="sheet-grabber"></div>'
+      + '<h2>Agregar al horario</h2>'
+      + '<span class="field-label">Tipo</span>'
+      + '<div class="cal-preset-row">'+chipsHtml+'</div>'
+      + '<span class="field-label">'+(esEstudio?'Tema':'Nombre')+'</span>'
+      + '<input class="name-input" id="calAddTitulo" placeholder="'+placeholder+'" maxlength="80" value="'+escapeAttr(prevVal)+'">'
+      + (esEstudio
+          ? ('<span class="field-label">Ramo (opcional)</span>'
+             + '<select class="name-input" id="calAddRamo">'+ramoOptions.replace('value="'+raVal+'"','value="'+raVal+'" selected')+'</select>')
+          : '')
+      + '<span class="field-label">Fecha</span>'
+      + '<input type="date" class="name-input" id="calAddFecha" value="'+feVal+'">'
+      + '<div class="cal-time-row">'
+      + '<div class="cal-time-col"><span class="field-label">Inicio</span><input type="time" class="name-input" id="calAddHoraInicio" value="'+hiVal+'"></div>'
+      + '<div class="cal-time-col"><span class="field-label">Término</span><input type="time" class="name-input" id="calAddHoraFin" value="'+hfVal+'"></div>'
+      + '</div>'
+      + '<div class="modal-actions">'
+      + '<button class="btn btn-secondary" id="cancelBtn">Cancelar</button>'
+      + '<button class="btn btn-primary" id="saveBtn">Crear</button>'
+      + '</div></div></div>';
+    document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id==='overlay') closeModal(); });
+    document.getElementById('cancelBtn').addEventListener('click', closeModal);
+    document.querySelectorAll('.cal-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const newTipo = chip.getAttribute('data-cal-preset');
+        if(newTipo === tipoSel) return;
+        // si el usuario no tocó título, sugerimos el label del nuevo preset
+        const ti = document.getElementById('calAddTitulo');
+        const oldP = calPresetByKey(tipoSel);
+        if(ti && (ti.value === '' || ti.value === oldP.label)){
+          ti.value = (newTipo === 'estudio') ? '' : calPresetByKey(newTipo).label;
+        }
+        tipoSel = newTipo;
+        render();
+      });
     });
-  });
-  document.getElementById('saveBtn').addEventListener('click', async () => {
-    const titulo = document.getElementById('actividadTitulo').value.trim();
-    if(!titulo){ document.getElementById('actividadTitulo').focus(); return; }
-    const id = 'a_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-    uni.actividades.push({
-      id, titulo,
-      fecha: document.getElementById('actividadFecha').value || todayISO(),
-      horaInicio: document.getElementById('actividadHoraInicio').value || '19:00',
-      horaFin: document.getElementById('actividadHoraFin').value || ''
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const titulo = document.getElementById('calAddTitulo').value.trim();
+      if(!titulo){ document.getElementById('calAddTitulo').focus(); return; }
+      const fecha = document.getElementById('calAddFecha').value || todayISO();
+      const hi = document.getElementById('calAddHoraInicio').value || '';
+      const hf = document.getElementById('calAddHoraFin').value || '';
+      if(tipoSel === 'estudio'){
+        const ramoId = (document.getElementById('calAddRamo') || {}).value || null;
+        const id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+        uni.estudio.push({ id, texto:titulo, ramoId, fecha, hora:hi, horaFin:hf, done:false });
+      } else {
+        const id = 'a_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+        uni.actividades.push({ id, titulo, tipo:tipoSel, fecha, horaInicio:hi, horaFin:hf, done:false });
+      }
+      closeModal();
+      renderUniversidadView();
+      debouncedSaveUni();
     });
-    closeModal();
-    renderUniversidadView();
-    debouncedSaveUni();
-  });
-  setTimeout(()=>{ document.getElementById('actividadTitulo').focus(); }, 50);
+    setTimeout(()=>{ const el = document.getElementById('calAddTitulo'); if(el){ el.focus(); if(!esEstudio) el.select(); } }, 50);
+  }
+  render();
+}
+// Alias retrocompatible por si algo externo llamaba a openActividadModal
+function openActividadModal(){ openCalendarAddModal({ tipo:'futsal' }); }
+// Edición de un bloque ya creado (estudio o actividad) desde el calendario
+function openCalendarEditModal(kind, id){
+  if(kind === 'estudio'){
+    const item = uni.estudio.find(x => x.id === id);
+    if(!item) return;
+    const root = document.getElementById('modalRoot');
+    const ramoOptions = '<option value="">Sin ramo (general)</option>' + uni.ramos.map(r => '<option value="'+r.id+'"'+(r.id===item.ramoId?' selected':'')+'>'+escapeHtml(r.nombre)+'</option>').join('');
+    root.innerHTML = '<div class="modal-overlay" id="overlay">'
+      + '<div class="modal">'
+      + '<div class="sheet-grabber"></div>'
+      + '<h2>Editar bloque de estudio</h2>'
+      + '<span class="field-label">Tema</span>'
+      + '<input class="name-input" id="calEdTexto" maxlength="80" value="'+escapeAttr(item.texto||'')+'">'
+      + '<span class="field-label">Ramo (opcional)</span>'
+      + '<select class="name-input" id="calEdRamo">'+ramoOptions+'</select>'
+      + '<span class="field-label">Fecha</span>'
+      + '<input type="date" class="name-input" id="calEdFecha" value="'+(item.fecha||todayISO())+'">'
+      + '<div class="cal-time-row">'
+      + '<div class="cal-time-col"><span class="field-label">Inicio</span><input type="time" class="name-input" id="calEdHi" value="'+(item.hora||'')+'"></div>'
+      + '<div class="cal-time-col"><span class="field-label">Término</span><input type="time" class="name-input" id="calEdHf" value="'+(item.horaFin||'')+'"></div>'
+      + '</div>'
+      + '<div class="modal-actions">'
+      + '<button class="btn btn-danger" id="delBtn">Eliminar</button>'
+      + '<button class="btn btn-secondary" id="cancelBtn">Cancelar</button>'
+      + '<button class="btn btn-primary" id="saveBtn">Guardar</button>'
+      + '</div></div></div>';
+    document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id==='overlay') closeModal(); });
+    document.getElementById('cancelBtn').addEventListener('click', closeModal);
+    document.getElementById('delBtn').addEventListener('click', () => {
+      if(confirm('¿Eliminar este bloque de estudio?')){
+        uni.estudio = uni.estudio.filter(x => x.id !== id);
+        closeModal(); renderUniversidadView(); debouncedSaveUni();
+      }
+    });
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const texto = document.getElementById('calEdTexto').value.trim();
+      if(!texto){ document.getElementById('calEdTexto').focus(); return; }
+      item.texto = texto;
+      item.ramoId = document.getElementById('calEdRamo').value || null;
+      item.fecha = document.getElementById('calEdFecha').value || item.fecha;
+      item.hora = document.getElementById('calEdHi').value || '';
+      item.horaFin = document.getElementById('calEdHf').value || '';
+      closeModal(); renderUniversidadView(); debouncedSaveUni();
+    });
+    setTimeout(()=>{ document.getElementById('calEdTexto').focus(); }, 50);
+  } else if(kind === 'actividad'){
+    const item = uni.actividades.find(x => x.id === id);
+    if(!item) return;
+    const root = document.getElementById('modalRoot');
+    const tipoAct = item.tipo || 'otro';
+    const tipoChips = ['futsal','gym','futbol','otro'].map(k => {
+      const label = k==='otro' ? 'Otro' : calPresetByKey(k).label;
+      return '<button type="button" class="cal-preset-chip'+(k===tipoAct?' active':'')+'" data-ed-tipo="'+k+'">'+label+'</button>';
+    }).join('');
+    root.innerHTML = '<div class="modal-overlay" id="overlay">'
+      + '<div class="modal">'
+      + '<div class="sheet-grabber"></div>'
+      + '<h2>Editar entrenamiento</h2>'
+      + '<span class="field-label">Tipo</span>'
+      + '<div class="cal-preset-row" id="edTipoRow">'+tipoChips+'</div>'
+      + '<span class="field-label">Nombre</span>'
+      + '<input class="name-input" id="calEdTitulo" maxlength="40" value="'+escapeAttr(item.titulo||'')+'">'
+      + '<span class="field-label">Fecha</span>'
+      + '<input type="date" class="name-input" id="calEdFecha" value="'+(item.fecha||todayISO())+'">'
+      + '<div class="cal-time-row">'
+      + '<div class="cal-time-col"><span class="field-label">Inicio</span><input type="time" class="name-input" id="calEdHi" value="'+(item.horaInicio||'')+'"></div>'
+      + '<div class="cal-time-col"><span class="field-label">Término</span><input type="time" class="name-input" id="calEdHf" value="'+(item.horaFin||'')+'"></div>'
+      + '</div>'
+      + '<div class="modal-actions">'
+      + '<button class="btn btn-danger" id="delBtn">Eliminar</button>'
+      + '<button class="btn btn-secondary" id="cancelBtn">Cancelar</button>'
+      + '<button class="btn btn-primary" id="saveBtn">Guardar</button>'
+      + '</div></div></div>';
+    let localTipo = tipoAct;
+    document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id==='overlay') closeModal(); });
+    document.getElementById('cancelBtn').addEventListener('click', closeModal);
+    document.querySelectorAll('[data-ed-tipo]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        localTipo = chip.getAttribute('data-ed-tipo');
+        document.querySelectorAll('[data-ed-tipo]').forEach(c => c.classList.toggle('active', c.getAttribute('data-ed-tipo')===localTipo));
+      });
+    });
+    document.getElementById('delBtn').addEventListener('click', () => {
+      if(confirm('¿Eliminar "'+(item.titulo||'este bloque')+'"?')){
+        uni.actividades = uni.actividades.filter(x => x.id !== id);
+        closeModal(); renderUniversidadView(); debouncedSaveUni();
+      }
+    });
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const titulo = document.getElementById('calEdTitulo').value.trim();
+      if(!titulo){ document.getElementById('calEdTitulo').focus(); return; }
+      item.titulo = titulo;
+      item.tipo = localTipo;
+      item.fecha = document.getElementById('calEdFecha').value || item.fecha;
+      item.horaInicio = document.getElementById('calEdHi').value || '';
+      item.horaFin = document.getElementById('calEdHf').value || '';
+      closeModal(); renderUniversidadView(); debouncedSaveUni();
+    });
+    setTimeout(()=>{ document.getElementById('calEdTitulo').focus(); }, 50);
+  }
 }
 function handleFabClick(){
   if(currentTab === 'habitos'){
@@ -4625,7 +5059,8 @@ function handleFabClick(){
       if(uni.ramos.length === 0){ uniSub = 'ramos'; renderUniversidadView(); showToast('Agrega un ramo primero'); return; }
       openHorarioModal();
     } else if(uniSub === 'estudio'){
-      if(orgView === 'horario') openActividadModal();
+      if(orgView === 'horario') openCalendarAddModal({ tipo:'estudio' });
+      else if(orgView === 'resumen') openCalendarAddModal({ tipo:'estudio' });
       else openEstudioModal();
     } else {
       openTareaModal();
